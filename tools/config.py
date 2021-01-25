@@ -74,7 +74,7 @@ def normalize_config_settings():
   JS_ENGINE = fix_js_engine(JS_ENGINE, listify(JS_ENGINE))
   JS_ENGINES = [listify(engine) for engine in JS_ENGINES]
   WASM_ENGINES = [listify(engine) for engine in WASM_ENGINES]
-  if not CACHE:
+  if not FROZEN_CACHE and not CACHE:
     if root_is_writable():
       CACHE = path_from_root('cache')
     else:
