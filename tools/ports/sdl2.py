@@ -5,9 +5,20 @@
 
 import os
 
-TAG = 'version_22'
-HASH = 'c95b65f21a54835b5623236b15bbe54176682c97752d23905662ce7622eabdcc48c1bac71028147b5e4cc1e960df97fd5be9b5bbee540b57bd2644f0ca7e6023'
-SUBDIR = 'SDL2-' + TAG
+# SDL2 patches from devappd/SDL2-emscripten-ports
+#
+# emshell-rollup-ver0 (6614aba) is based on tag:
+#
+#     emscripten-ports/SDL2#2695e113f0878e49d7ac3f4953417f51d0ee6e0e
+#
+# and includes:
+#
+#     sdl2-resize-fullscreen-fix
+#
+
+TAG = '6614aba8773ebdfd429025981361658f07ed585a'
+HASH = '8da26678ec565afa585173c88f723769a43a7c5dbda4c3b2faf0c20a0361e6a113339dfef975ad3a04cc7b69f963300a0ecbd2ea17bbbecba686e273301b5311'
+SUBDIR = 'SDL2-emscripten-ports' + TAG
 
 
 def needed(settings):
@@ -20,7 +31,7 @@ def get_lib_name(settings):
 
 def get(ports, settings, shared):
   # get the port
-  ports.fetch_project('sdl2', 'https://github.com/emscripten-ports/SDL2/archive/' + TAG + '.zip', SUBDIR, sha512hash=HASH)
+  ports.fetch_project('sdl2', 'https://github.com/devappd/SDL2-emscripten-ports/archive/' + TAG + '.zip', SUBDIR, sha512hash=HASH)
   libname = get_lib_name(settings)
 
   def create():
