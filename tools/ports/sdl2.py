@@ -18,7 +18,7 @@ import os
 
 TAG = '6614aba8773ebdfd429025981361658f07ed585a'
 HASH = '8da26678ec565afa585173c88f723769a43a7c5dbda4c3b2faf0c20a0361e6a113339dfef975ad3a04cc7b69f963300a0ecbd2ea17bbbecba686e273301b5311'
-SUBDIR = 'SDL2-emscripten-ports' + TAG
+SUBDIR = 'SDL2-emscripten-ports-' + TAG
 
 
 def needed(settings):
