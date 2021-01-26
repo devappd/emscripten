@@ -7,9 +7,9 @@ import os
 import shutil
 import logging
 
-TAG = 'release-2.0.2'
-HASH = 'b9d03061d177f20f4e03f3e3553afd7bfe0c05da7b9a774312b389318e747cf9724e0475e9afff6a64ce31bab0217e2afb2619d75556753fbbb6ecafa9775219'
-
+TAG = 'release-2.0.4'
+HASH = 'aab26c9656a3763af8461428945c0a50f743008948b8370c2df86ce99bc7904a7df75267d1c358a92cec7555549f00227683f05cf6aa7611faed3dbbbfbb7cc6'
+SUBDIR = 'SDL_mixer-' + TAG
 
 def needed(settings):
   return settings.USE_SDL_MIXER == 2
@@ -18,7 +18,7 @@ def needed(settings):
 def get(ports, settings, shared):
   sdl_build = os.path.join(ports.get_build_dir(), 'sdl2')
   assert os.path.exists(sdl_build), 'You must use SDL2 to use SDL2_mixer'
-  ports.fetch_project('sdl2_mixer', 'https://github.com/emscripten-ports/SDL2_mixer/archive/' + TAG + '.zip', 'SDL2_mixer-' + TAG, sha512hash=HASH)
+  ports.fetch_project('sdl2_mixer', 'https://github.com/SDL-mirror/SDL_mixer/archive/' + TAG + '.zip', SUBDIR, sha512hash=HASH)
 
   settings.SDL2_MIXER_FORMATS.sort()
   formats = '-'.join(settings.SDL2_MIXER_FORMATS)
@@ -31,7 +31,7 @@ def get(ports, settings, shared):
   def create():
     logging.info('building port: sdl2_mixer')
 
-    source_path = os.path.join(ports.get_dir(), 'sdl2_mixer', 'SDL2_mixer-' + TAG)
+    source_path = os.path.join(ports.get_dir(), 'sdl2_mixer', SUBDIR)
     dest_path = os.path.join(ports.get_build_dir(), 'sdl2_mixer')
 
     shutil.rmtree(dest_path, ignore_errors=True)
