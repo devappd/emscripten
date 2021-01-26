@@ -38,7 +38,7 @@ def get(ports, settings, shared):
     flags = [
       '-DOPT_GENERIC',
       '-DREAL_IS_FLOAT',
-      '-O2',
+      '-O3',
       '-fomit-frame-pointer',
       '-funroll-all-loops',
       '-finline-functions',
@@ -83,7 +83,7 @@ def get(ports, settings, shared):
 
     for src in srcs:
       obj = src + '.o'
-      commands.append([shared.EMCC, '-c', src, '-O2', '-o', obj, '-w'] + flags)
+      commands.append([shared.EMCC, '-c', src, '-O3', '-o', obj, '-w'] + flags)
       objects.append(obj)
 
     ports.run_commands(commands)

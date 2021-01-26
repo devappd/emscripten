@@ -87,7 +87,7 @@ def get(ports, settings, shared):
       command = [shared.EMCC,
                  '-c', os.path.join(ports.get_dir(), 'sdl2', SUBDIR, 'src', src),
                  '-o', o, '-I' + dest_include_path,
-                 '-O2', '-DUSING_GENERATED_CONFIG_H', '-w']
+                 '-O3', '-DUSING_GENERATED_CONFIG_H', '-w']
       if settings.USE_PTHREADS:
         command += ['-s', 'USE_PTHREADS']
       commands.append(command)

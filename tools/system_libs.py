@@ -1626,7 +1626,7 @@ class Ports(object):
     objects = []
     for src in srcs:
       obj = src + '.o'
-      commands.append([shared.EMCC, '-c', src, '-O2', '-o', obj, '-w'] + include_commands + flags)
+      commands.append([shared.EMCC, '-c', src, '-O3', '-o', obj, '-w'] + include_commands + flags)
       objects.append(obj)
 
     Ports.run_commands(commands)
