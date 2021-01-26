@@ -115,8 +115,16 @@ class interactive(BrowserCore):
     'wav': ([],         '0',            'the_entertainer.wav'),
     'ogg': (['ogg'],    'MIX_INIT_OGG', 'alarmvictory_1.ogg'),
     'mp3': (['mp3'],    'MIX_INIT_MP3', 'pudinha.mp3'),
+    'mid': (['mid'],    'MIX_INIT_MID', 'bwv-988-v02.mid', '__Florestan_Basic_GM_GS.sf2')
   })
-  def test_sdl2_mixer_music(self, formats, flags, music_name):
+  def test_sdl2_mixer_music(self, formats, flags, music_name, soundfont_name=None):
+    soundfont_args = []
+    if soundfont_name:
+      shutil.copyfile(path_from_root('tests', 'sounds', soundfont_name), soundfont_name)
+      soundfont_args = [
+        '--preload-file', soundfont_name,
+        '-DSOUNDFONT_PATH=' + json.dumps(soundfont_name)
+      ]
     shutil.copyfile(path_from_root('tests', 'sounds', music_name), music_name)
     self.btest('sdl2_mixer_music.c', expected='1', args=[
       '-O2',
@@ -128,7 +136,7 @@ class interactive(BrowserCore):
       '-s', 'USE_SDL_MIXER=2',
       '-s', 'SDL2_MIXER_FORMATS=' + json.dumps(formats),
       '-s', 'INITIAL_MEMORY=33554432'
-    ])
+    ] + soundfont_args)
 
   def zzztest_sdl2_audio_beeps(self):
     # use closure to check for a possible bug with closure minifying away newer Audio() attributes

@@ -52,6 +52,13 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+#ifdef SOUNDFONT_PATH
+	if (!Mix_SetSoundFonts(SOUNDFONT_PATH)) {
+		printf("Failed to Mix_SetSoundFonts(): %s\n", Mix_GetError());
+		return -1;
+	}
+#endif
+
 #ifndef SOUND_PATH
 #error "must define SOUND_PATH"
 #endif

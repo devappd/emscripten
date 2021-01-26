@@ -55,6 +55,14 @@ def get(ports, settings, shared):
         '-DMUSIC_MP3_MPG123',
       ]
 
+    if "mid" in settings.SDL2_MIXER_FORMATS or \
+       "midi" in settings.SDL2_MIXER_FORMATS or \
+       "fluidsynth" in settings.SDL2_MIXER_FORMATS:
+      flags += [
+        '-s', 'USE_FLUIDSYNTH=1',
+        '-DMUSIC_MID_FLUIDSYNTH'
+      ]
+
     final = os.path.join(dest_path, libname)
     ports.build_port(
       dest_path,
@@ -93,6 +101,11 @@ def process_dependencies(settings):
   if "mp3" in settings.SDL2_MIXER_FORMATS:
     deps.append('mpg123')
     settings.USE_MPG123 = 1
+  if "mid" in settings.SDL2_MIXER_FORMATS or \
+     "midi" in settings.SDL2_MIXER_FORMATS or \
+     "fluidsynth" in settings.SDL2_MIXER_FORMATS:
+    deps.append('fluidsynth')
+    settings.USE_FLUIDSYNTH = 1
 
 
 def process_args(ports):

@@ -56,6 +56,7 @@ USER_TASKS = [
     'bullet',
     'bzip2',
     'cocos2d',
+    'fluidsynth',
     'freetype',
     'harfbuzz',
     'icu',
@@ -189,6 +190,8 @@ def main():
       build_port('vorbis', 'libvorbis.a')
     elif what == 'ogg':
       build_port('ogg', 'libogg.a')
+    elif what == 'fluidsynth':
+      build_port('fluidsynth', 'libfluidsynth.a')
     elif what == 'libjpeg':
       build_port('libjpeg', 'libjpeg.a')
     elif what == 'libpng':
@@ -227,6 +230,11 @@ def main():
       old_formats = shared.Settings.SDL2_MIXER_FORMATS
       shared.Settings.SDL2_MIXER_FORMATS = ["mp3"]
       build_port('sdl2_mixer', 'libSDL2_mixer_mp3.a')
+      shared.Settings.SDL2_MIXER_FORMATS = old_formats
+    elif what in ['sdl2-mixer-mid','sdl2-mixer-midi','sdl2-mixer-fluidsynth']:
+      old_formats = shared.Settings.SDL2_MIXER_FORMATS
+      shared.Settings.SDL2_MIXER_FORMATS = ["fluidsynth"]
+      build_port('sdl2_mixer', 'libSDL2_mixer_fluidsynth.a')
       shared.Settings.SDL2_MIXER_FORMATS = old_formats
     elif what == 'freetype':
       build_port('freetype', 'libfreetype.a')

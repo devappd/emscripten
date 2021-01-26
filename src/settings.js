@@ -1225,6 +1225,9 @@ var USE_OGG = 0;
 // 1 = use mpg123 from emscripten-ports
 var USE_MPG123 = 0;
 
+// 1 = use fluidsynth from devappd/fluidsynth-emscripten
+var USE_FLUIDSYNTH = 0;
+
 // 1 = use freetype from emscripten-ports
 var USE_FREETYPE = 0;
 
