@@ -228,6 +228,11 @@ def main():
       shared.Settings.SDL2_MIXER_FORMATS = ["mp3"]
       build_port('sdl2_mixer', 'libSDL2_mixer_mp3.a')
       shared.Settings.SDL2_MIXER_FORMATS = old_formats
+    elif what == 'sdl2-mixer-html5':
+      old_formats = shared.Settings.SDL2_MIXER_FORMATS
+      shared.Settings.SDL2_MIXER_FORMATS = ["html5"]
+      build_port('sdl2_mixer', 'libSDL2_mixer_html5.a')
+      shared.Settings.SDL2_MIXER_FORMATS = old_formats
     elif what == 'freetype':
       build_port('freetype', 'libfreetype.a')
     elif what == 'harfbuzz':

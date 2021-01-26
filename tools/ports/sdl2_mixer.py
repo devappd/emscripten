@@ -7,9 +7,9 @@ import os
 import shutil
 import logging
 
-TAG = 'release-2.0.2'
-HASH = 'b9d03061d177f20f4e03f3e3553afd7bfe0c05da7b9a774312b389318e747cf9724e0475e9afff6a64ce31bab0217e2afb2619d75556753fbbb6ecafa9775219'
-
+TAG = 'music_html5'
+HASH = None
+SUBDIR = 'SDL_mixer_html5-' + TAG
 
 def needed(settings):
   return settings.USE_SDL_MIXER == 2
@@ -18,7 +18,7 @@ def needed(settings):
 def get(ports, settings, shared):
   sdl_build = os.path.join(ports.get_build_dir(), 'sdl2')
   assert os.path.exists(sdl_build), 'You must use SDL2 to use SDL2_mixer'
-  ports.fetch_project('sdl2_mixer', 'https://github.com/emscripten-ports/SDL2_mixer/archive/' + TAG + '.zip', 'SDL2_mixer-' + TAG, sha512hash=HASH)
+  ports.fetch_project('sdl2_mixer', 'https://github.com/devappd/SDL_mixer_html5/archive/' + TAG + '.zip', SUBDIR, sha512hash=HASH)
 
   settings.SDL2_MIXER_FORMATS.sort()
   formats = '-'.join(settings.SDL2_MIXER_FORMATS)
@@ -31,7 +31,7 @@ def get(ports, settings, shared):
   def create():
     logging.info('building port: sdl2_mixer')
 
-    source_path = os.path.join(ports.get_dir(), 'sdl2_mixer', 'SDL2_mixer-' + TAG)
+    source_path = os.path.join(ports.get_dir(), 'sdl2_mixer', SUBDIR)
     dest_path = os.path.join(ports.get_build_dir(), 'sdl2_mixer')
 
     shutil.rmtree(dest_path, ignore_errors=True)
@@ -53,6 +53,11 @@ def get(ports, settings, shared):
       flags += [
         '-s', 'USE_MPG123=1',
         '-DMUSIC_MP3_MPG123',
+      ]
+
+    if "html5" in settings.SDL2_MIXER_FORMATS:
+      flags += [
+        '-DMUSIC_HTML5'
       ]
 
     final = os.path.join(dest_path, libname)
