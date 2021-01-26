@@ -53,7 +53,7 @@ def get(ports, settings, shared):
                  '-DGL_ES=1',
                  '-DNDEBUG', # '-DCOCOS2D_DEBUG=1' 1 - error/warn, 2 - verbose
                  '-DCP_USE_DOUBLES=0',
-                 '-O2',
+                 '-O3',
                  '-s', 'USE_ZLIB=1',
                  '-s', 'USE_LIBPNG=1',
                  '-o', o, '-w']
