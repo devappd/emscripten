@@ -992,9 +992,9 @@ function makeDynCall(sig, funcPtr) {
         args.push(`a${i}`);
       }
       args = args.join(', ');
-      return `(function(${args}) { ${dyncall}.apply(null, [${funcPtr}, ${args}]); })`;
+      return `(function(${args}) { return ${dyncall}.apply(null, [${funcPtr}, ${args}]); })`;
     } else {
-      return `(function() { ${dyncall}.call(null, ${funcPtr}); })`;
+      return `(function() { return ${dyncall}.call(null, ${funcPtr}); })`;
     }
   } else {
     return `wasmTable.get(${funcPtr})`;
