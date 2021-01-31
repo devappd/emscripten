@@ -39,7 +39,7 @@ def get(ports, settings, shared):
 
     flags = [
       '-s', 'USE_SDL=2',
-      '-DMUSIC_WAV',
+      '-DMUSIC_WAV', '-g', '-O0'
     ]
 
     if "ogg" in settings.SDL2_MIXER_FORMATS:
