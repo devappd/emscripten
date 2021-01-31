@@ -5,19 +5,8 @@
 
 import os
 
-# SDL2 patches from devappd/SDL2-emscripten-ports
-#
-# emshell-rollup-ver0 (6614aba) is based on tag:
-#
-#     emscripten-ports/SDL2#2695e113f0878e49d7ac3f4953417f51d0ee6e0e
-#
-# and includes:
-#
-#     sdl2-resize-fullscreen-fix
-#
-
-TAG = '6614aba8773ebdfd429025981361658f07ed585a'
-HASH = '8da26678ec565afa585173c88f723769a43a7c5dbda4c3b2faf0c20a0361e6a113339dfef975ad3a04cc7b69f963300a0ecbd2ea17bbbecba686e273301b5311'
+TAG = 'emshell-rollup-ver0'
+HASH = None
 SUBDIR = 'SDL2-emscripten-ports-' + TAG
 
 
