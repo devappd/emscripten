@@ -419,6 +419,136 @@ var LibraryJSEvents = {
     return {{{ cDefine('EMSCRIPTEN_RESULT_SUCCESS') }}};
   },
 
+  lengthToPixels: function( length/*: string*/, parent/*: number*/, child/*: number*/ ) {
+    // MIT License
+    // Copyright (c) 2020 Nik Coughlin
+    // https://github.com/nrkn/object-fit-math
+
+    return length.endsWith( '%' ) ?
+      ( parent - child ) * ( parseFloat( length ) / 100 ) :
+      parseFloat( length );
+  },
+
+  getChildFit: function( parent/*: Size*/, child/*: Size*/, fitMode/*: FitMode = 'fill'*/ ) {
+    // MIT License
+    // Copyright (c) 2020 Nik Coughlin
+    // https://github.com/nrkn/object-fit-math
+    //
+    // export type Size = { width: number, height: number }
+    // export type FitMode = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+
+    if ( !fitMode )
+      fitMode = 'fill'
+
+    if ( fitMode === 'scale-down' ) {
+      if ( child.width <= parent.width && child.height <= parent.height ) {
+        fitMode = 'none'
+      } else {
+        fitMode = 'contain'
+      }
+    }
+
+    if ( fitMode === 'cover' || fitMode === 'contain' ) {
+      const wr = parent.width / child.width
+      const hr = parent.height / child.height
+      const ratio = fitMode === 'cover' ? Math.max( wr, hr ) : Math.min( wr, hr )
+
+      const width = child.width * ratio
+      const height = child.height * ratio
+      const size/*: Size*/ = { width, height }
+
+      return size
+    }
+
+    if ( fitMode === 'none' ) return child
+
+    // default case, fitMode === 'fill'
+    return parent
+  },
+
+  getChildPosition__deps: ['lengthToPixels'],
+  getChildPosition: function (
+    parent/*: Size*/, child/*: Size*/, left/* = '50%'*/, top/* = '50%'*/
+  ) {
+    // MIT License
+    // Copyright (c) 2020 Nik Coughlin
+    // https://github.com/nrkn/object-fit-math
+    //
+    // export type Size = { width: number, height: number }
+    // export type Point = { x: number, y: number }
+
+    if ( !left )
+      left = '50%'
+    
+    if ( !top )
+      top = '50%'
+
+    const x = _lengthToPixels( left, parent.width, child.width )
+    const y = _lengthToPixels( top, parent.height, child.height )
+
+    const point/*: Point*/ = { x, y }
+
+    return point
+  },
+
+  getChildFitAndPosition__deps: ['getChildFit', 'getChildPosition'],
+  getChildFitAndPosition: function (
+    parent/*: Size*/, child/*: Size*/,
+    fitMode/*: FitMode = 'fill'*/, left/* = '50%'*/, top/* = '50%'*/
+  ) {
+    // MIT License
+    // Copyright (c) 2020 Nik Coughlin
+    // https://github.com/nrkn/object-fit-math
+    //
+    // export type Size = { width: number, height: number }
+    // export type Rect = Point & Size
+    // export type FitMode = 'contain' | 'cover' | 'fill' | 'none' | 'scale-down'
+
+    if ( !fitMode )
+      fitMode = 'fill'
+
+    if ( !left )
+      left = '50%'
+    
+    if ( !top )
+      top = '50%'
+
+    const fitted = _getChildFit( parent, child, fitMode )
+
+    const { x, y } = _getChildPosition( parent, fitted, left, top )
+    const { width, height } = fitted
+
+    const rect/*: Rect*/ = { x, y, width, height }
+
+    return rect
+  },
+
+  $getChildBoundingClientRect__deps: ['$getBoundingClientRect', 'getChildFitAndPosition'],
+  $getChildBoundingClientRect: function(e) {
+    var parentRect = getBoundingClientRect(e);
+
+    var computedStyle = window.getComputedStyle(e);
+    var childPositions = computedStyle.getPropertyValue('object-position').split(' ');
+
+    var childFitAndPosition = _getChildFitAndPosition(
+      { width: parentRect.width, height: parentRect.height },
+      {
+        width: e instanceof HTMLCanvasElement ? e.width : e.naturalWidth,
+        height: e instanceof HTMLCanvasElement ? e.height : e.naturalHeight
+      },
+      computedStyle.getPropertyValue('object-fit'),
+      childPositions[0],
+      childPositions[1]
+    );
+
+    return new DOMRect(
+      parentRect.x + childFitAndPosition.x,
+      parentRect.y + childFitAndPosition.y,
+      childFitAndPosition.width,
+      childFitAndPosition.height
+    );
+  },
+
   // Outline access to function .getBoundingClientRect() since it is a long string. Closure compiler does not outline access to it by itself, but it can inline access if
   // there is only one caller to this function.
   $getBoundingClientRect__deps: ['$specialHTMLTargets'],
@@ -430,7 +560,7 @@ var LibraryJSEvents = {
   // eventStruct: the structure to populate.
   // e: The JS mouse event to read data from.
   // target: Specifies a target DOM element that will be used as the reference to populate targetX and targetY parameters.
-  $fillMouseEventData__deps: ['$JSEvents', '$getBoundingClientRect', '$specialHTMLTargets'],
+  $fillMouseEventData__deps: ['$JSEvents', '$getBoundingClientRect', '$getChildBoundingClientRect', '$specialHTMLTargets'],
   $fillMouseEventData: function(eventStruct, e, target) {
 #if ASSERTIONS
     assert(eventStruct % 4 == 0);
@@ -474,17 +604,22 @@ var LibraryJSEvents = {
 
 #if !DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR
     if (Module['canvas']) {
-      var rect = getBoundingClientRect(Module['canvas']);
-      HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.canvasX / 4 }}}] = e.clientX - rect.left;
-      HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.canvasY / 4 }}}] = e.clientY - rect.top;
+      var rect = getChildBoundingClientRect(Module['canvas']);
+      var canvasScale = parseFloat(Module['canvas'].dataset.scale) || 1;
+      HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.canvasX / 4 }}}] = (e.clientX - rect.left) * scale;
+      HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.canvasY / 4 }}}] = (e.clientY - rect.top) * scale;
     } else { // Canvas is not initialized, return 0.
       HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.canvasX / 4 }}}] = 0;
       HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.canvasY / 4 }}}] = 0;
     }
 #endif
-    var rect = getBoundingClientRect(target);
-    HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.targetX / 4 }}}] = e.clientX - rect.left;
-    HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.targetY / 4 }}}] = e.clientY - rect.top;
+    // Per emscripten-ports/SDL2@b1060d9, the mouseup handler attaches to document to resolve stuck clicks.
+    // The rect we really want is #canvas.
+    var realTarget = (target instanceof HTMLDocument) ? findEventTarget("#canvas") : target;
+    var scale = parseFloat(realTarget.dataset.scale) || 1;
+    var rect = (realTarget instanceof HTMLCanvasElement) ? getChildBoundingClientRect(realTarget) : getBoundingClientRect(realTarget);
+    HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.targetX / 4 }}}] = (e.clientX - rect.left) * scale;
+    HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.targetY / 4 }}}] = (e.clientY - rect.top) * scale;
 
 #if MIN_IE_VERSION != TARGET_NOT_SUPPORTED || MIN_SAFARI_VERSION <= 80000 || MIN_EDGE_VERSION <= 12 || MIN_CHROME_VERSION <= 21 // https://caniuse.com/#search=movementX
 #if MIN_CHROME_VERSION <= 76
@@ -500,6 +635,11 @@ var LibraryJSEvents = {
     }
 #endif
 #endif
+
+    var pointInRect = (e.clientX >= rect.left && e.clientX <= rect.right)
+      && (e.clientY >= rect.top && e.clientY <= rect.bottom);
+
+    return pointInRect;
   },
 
   $registerMouseEventCallback__deps: ['$JSEvents', '$fillMouseEventData', '$findEventTarget'],
@@ -514,7 +654,11 @@ var LibraryJSEvents = {
       var e = ev || event;
 
       // TODO: Make this access thread safe, or this could update live while app is reading it.
-      fillMouseEventData(JSEvents.mouseEvent, e, target);
+      var valid = fillMouseEventData(JSEvents.mouseEvent, e, target);
+
+      if (!valid && eventTypeId != {{{ cDefine('EMSCRIPTEN_EVENT_MOUSEUP') }}}) {
+        return;
+      }
 
 #if USE_PTHREADS
       if (targetThread) {
@@ -2035,7 +2179,7 @@ var LibraryJSEvents = {
     return {{{ cDefine('EMSCRIPTEN_RESULT_SUCCESS') }}};
   },
 
-  $registerTouchEventCallback__deps: ['$JSEvents', '$findEventTarget', '$getBoundingClientRect'],
+  $registerTouchEventCallback__deps: ['$JSEvents', '$findEventTarget', '$getBoundingClientRect', '$getChildBoundingClientRect'],
   $registerTouchEventCallback: function(target, userData, useCapture, callbackfunc, eventTypeId, eventTypeString, targetThread) {
 #if USE_PTHREADS
     targetThread = JSEvents.getTargetThreadForEventCallback(targetThread);
@@ -2086,9 +2230,13 @@ var LibraryJSEvents = {
       HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchEvent.metaKey / 4}}}] = e.metaKey;
       idx += {{{ C_STRUCTS.EmscriptenTouchEvent.touches / 4 }}}; // Advance to the start of the touch array.
 #if !DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR
-      var canvasRect = Module['canvas'] ? getBoundingClientRect(Module['canvas']) : undefined;
+      var canvasRect = Module['canvas'] ? getChildBoundingClientRect(Module['canvas']) : undefined;
 #endif
-      var targetRect = getBoundingClientRect(target);
+      // Per emscripten-ports/SDL2@b1060d9, the mouseup handler attaches to document to resolve stuck clicks.
+      // The rect we really want is #canvas.
+      var realTarget = (target instanceof HTMLDocument) ? findEventTarget("#canvas") : target;
+      var scale = parseFloat(realTarget.dataset.scale) || 1;
+      var targetRect = (realTarget instanceof HTMLCanvasElement) ? getChildBoundingClientRect(realTarget) : getBoundingClientRect(realTarget);
       var numTouches = 0;
       for(var i in touches) {
         var t = touches[i];
@@ -2101,11 +2249,11 @@ var LibraryJSEvents = {
         HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.pageY / 4}}}] = t.pageY;
         HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.isChanged / 4}}}] = t.isChanged;
         HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.onTarget / 4}}}] = t.onTarget;
-        HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.targetX / 4}}}] = t.clientX - targetRect.left;
-        HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.targetY / 4}}}] = t.clientY - targetRect.top;
+        HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.targetX / 4}}}] = (t.clientX - targetRect.left) * scale;
+        HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.targetY / 4}}}] = (t.clientY - targetRect.top) * scale;
 #if !DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR
-        HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.canvasX / 4}}}] = canvasRect ? t.clientX - canvasRect.left : 0;
-        HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.canvasY / 4}}}] = canvasRect ? t.clientY - canvasRect.top : 0;
+        HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.canvasX / 4}}}] = canvasRect ? (t.clientX - canvasRect.left) * scale : 0;
+        HEAP32[idx + {{{ C_STRUCTS.EmscriptenTouchPoint.canvasY / 4}}}] = canvasRect ? (t.clientY - canvasRect.top) * scale : 0;
 #endif
 
         idx += {{{ C_STRUCTS.EmscriptenTouchPoint.__size__ / 4 }}};
@@ -2447,14 +2595,16 @@ var LibraryJSEvents = {
     }
 
     if (ratio) {
-      if (width < height) {
-        adjusted.height = width * ratio;
+      if (height > width) {
+        width *= ratio;
       } else {
-        adjusted.width = height * ratio;
+        height *= ratio;
       }
     }
   
     var scale = parseFloat(canvas.dataset.scale);
+    // if (!scale || internalScale < scale)
+    //   scale = internalScale;
 
     if (scale > 0) {
       adjusted.width *= scale;
