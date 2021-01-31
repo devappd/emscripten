@@ -2403,11 +2403,76 @@ var LibraryJSEvents = {
     return {{{ cDefine('EMSCRIPTEN_RESULT_SUCCESS') }}};
   },
 
+  $getAdjustedCanvasDimensions: function(canvas, width, height) {
+    var forceLandscape = canvas.dataset.orientation === "landscape";
+    var forcePortrait = canvas.dataset.orientation === "portrait";
+
+    if (forceLandscape && height > width) {
+      var bigger = height, smaller = width;
+      var swapRatio = bigger / smaller;
+      width = smaller;
+      height = smaller / swapRatio;
+    } else if (forcePortrait && width > height) {
+      var bigger = width, smaller = height;
+      var swapRatio = bigger / smaller;
+      width = smaller / swapRatio;
+      height = smaller;
+    }
+
+    var adjusted = { width: width, height: height };
+
+    var ratio = parseFloat(canvas.dataset.ratio);
+    var minRatio = parseFloat(canvas.dataset.minRatio);
+    var maxRatio = parseFloat(canvas.dataset.maxRatio);
+
+    var inRatio;
+    if (width < height) {
+      inRatio = height / width;
+    } else {
+      inRatio = width / height;
+    }
+
+    if (minRatio 
+        && ((!ratio && minRatio > inRatio)
+            || minRatio > ratio)
+    ) {
+      ratio = minRatio;
+    }
+
+    if (maxRatio 
+      && ((!ratio && maxRatio < inRatio)
+          || maxRatio < ratio)
+    ) {
+      ratio = maxRatio;
+    }
+
+    if (ratio) {
+      if (width < height) {
+        adjusted.height = width * ratio;
+      } else {
+        adjusted.width = height * ratio;
+      }
+    }
+  
+    var scale = parseFloat(canvas.dataset.scale);
+
+    if (scale > 0) {
+      adjusted.width *= scale;
+      adjusted.height *= scale;
+    }
+
+    return adjusted;
+  },
+
 #if USE_PTHREADS
-  emscripten_set_canvas_element_size_calling_thread__deps: ['$JSEvents', 'emscripten_set_offscreencanvas_size_on_target_thread', '$findCanvasEventTarget'],
+  emscripten_set_canvas_element_size_calling_thread__deps: ['$JSEvents', 'emscripten_set_offscreencanvas_size_on_target_thread', '$findCanvasEventTarget', '$getAdjustedCanvasDimensions'],
   emscripten_set_canvas_element_size_calling_thread: function(target, width, height) {
     var canvas = findCanvasEventTarget(target);
     if (!canvas) return {{{ cDefine('EMSCRIPTEN_RESULT_UNKNOWN_TARGET') }}};
+
+    var adjustedDimensions = getAdjustedCanvasDimensions(canvas, width, height);
+    width = adjustedDimensions.width;
+    height = adjustedDimensions.height;
 
     if (canvas.canvasSharedPtr) {
       // N.B. We hold the canvasSharedPtr info structure as the authoritative source for specifying the size of a canvas
@@ -2500,15 +2565,16 @@ var LibraryJSEvents = {
     }
   }, 
 #else
-  emscripten_set_canvas_element_size__deps: ['$JSEvents', '$findCanvasEventTarget'],
+  emscripten_set_canvas_element_size__deps: ['$JSEvents', '$findCanvasEventTarget', '$getAdjustedCanvasDimensions'],
   emscripten_set_canvas_element_size: function(target, width, height) {
 #if GL_DEBUG
     console.error('emscripten_set_canvas_element_size(target='+target+',width='+width+',height='+height);
 #endif
     var canvas = findCanvasEventTarget(target);
     if (!canvas) return {{{ cDefine('EMSCRIPTEN_RESULT_UNKNOWN_TARGET') }}};
-    canvas.width = width;
-    canvas.height = height;
+    var adjustedDimensions = getAdjustedCanvasDimensions(canvas, width, height);
+    canvas.width = adjustedDimensions.width;
+    canvas.height = adjustedDimensions.height;
 #if OFFSCREEN_FRAMEBUFFER
     if (canvas.GLctxObject) GL.resizeOffscreenFramebuffer(canvas.GLctxObject);
 #endif
@@ -2516,14 +2582,15 @@ var LibraryJSEvents = {
   },
 #endif
 
-  $setCanvasElementSize__deps: ['emscripten_set_canvas_element_size'],
+  $setCanvasElementSize__deps: ['emscripten_set_canvas_element_size', '$getAdjustedCanvasDimensions'],
   $setCanvasElementSize: function(target, width, height) {
 #if GL_DEBUG
     console.error('setCanvasElementSize(target='+target+',width='+width+',height='+height);
 #endif
     if (!target.controlTransferredOffscreen) {
-      target.width = width;
-      target.height = height;
+      var adjustedDimensions = getAdjustedCanvasDimensions(target, width, height);
+      target.width = adjustedDimensions.width;
+      target.height = adjustedDimensions.height;
     } else {
       // This function is being called from high-level JavaScript code instead of asm.js/Wasm,
       // and it needs to synchronously proxy over to another thread, so marshal the string onto the heap to do the call.
