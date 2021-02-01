@@ -605,7 +605,7 @@ var LibraryJSEvents = {
 #if !DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR
     if (Module['canvas']) {
       var rect = getChildBoundingClientRect(Module['canvas']);
-      var canvasScale = parseFloat(Module['canvas'].dataset.scale) || 1;
+      var canvasScale = parseFloat(Module['canvas'].dataset.internalScale) || 1;
       HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.canvasX / 4 }}}] = (e.clientX - rect.left) * scale;
       HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.canvasY / 4 }}}] = (e.clientY - rect.top) * scale;
     } else { // Canvas is not initialized, return 0.
@@ -616,7 +616,7 @@ var LibraryJSEvents = {
     // Per emscripten-ports/SDL2@b1060d9, the mouseup handler attaches to document to resolve stuck clicks.
     // The rect we really want is #canvas.
     var realTarget = (target instanceof HTMLDocument) ? findEventTarget("#canvas") : target;
-    var scale = parseFloat(realTarget.dataset.scale) || 1;
+    var scale = parseFloat(realTarget.dataset.internalScale) || 1;
     var rect = (realTarget instanceof HTMLCanvasElement) ? getChildBoundingClientRect(realTarget) : getBoundingClientRect(realTarget);
     HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.targetX / 4 }}}] = (e.clientX - rect.left) * scale;
     HEAP32[idx + {{{ C_STRUCTS.EmscriptenMouseEvent.targetY / 4 }}}] = (e.clientY - rect.top) * scale;
@@ -2235,7 +2235,7 @@ var LibraryJSEvents = {
       // Per emscripten-ports/SDL2@b1060d9, the mouseup handler attaches to document to resolve stuck clicks.
       // The rect we really want is #canvas.
       var realTarget = (target instanceof HTMLDocument) ? findEventTarget("#canvas") : target;
-      var scale = parseFloat(realTarget.dataset.scale) || 1;
+      var scale = parseFloat(realTarget.dataset.internalScale) || 1;
       var targetRect = (realTarget instanceof HTMLCanvasElement) ? getChildBoundingClientRect(realTarget) : getBoundingClientRect(realTarget);
       var numTouches = 0;
       for(var i in touches) {
@@ -2594,22 +2594,30 @@ var LibraryJSEvents = {
       ratio = maxRatio;
     }
 
+    var internalScale = 1;
+    var rect = canvas.getBoundingClientRect();
+
     if (ratio) {
-      if (height > width) {
-        width *= ratio;
+      if (width < height) {
+        adjusted.height = width * ratio;
+        internalScale = rect.height / adjusted.height; //adjusted.height / rect.height;
       } else {
-        height *= ratio;
+        adjusted.width = height * ratio;
+        internalScale = rect.width / adjusted.width;//adjusted.width / rect.width;
       }
     }
   
     var scale = parseFloat(canvas.dataset.scale);
-    // if (!scale || internalScale < scale)
-    //   scale = internalScale;
 
-    if (scale > 0) {
-      adjusted.width *= scale;
-      adjusted.height *= scale;
+    if (scale > internalScale)
+      internalScale = scale;
+
+    if (internalScale > 0) {
+      adjusted.width *= internalScale;
+      adjusted.height *= internalScale;
     }
+
+    canvas.dataset.internalScale = internalScale;
 
     return adjusted;
   },
