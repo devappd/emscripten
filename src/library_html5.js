@@ -2595,16 +2595,14 @@ var LibraryJSEvents = {
     }
 
     if (ratio) {
-      if (height > width) {
-        width *= ratio;
+      if (width < height) {
+        adjusted.height = width * ratio;
       } else {
-        height *= ratio;
+        adjusted.width = height * ratio;
       }
     }
   
     var scale = parseFloat(canvas.dataset.scale);
-    // if (!scale || internalScale < scale)
-    //   scale = internalScale;
 
     if (scale > 0) {
       adjusted.width *= scale;
